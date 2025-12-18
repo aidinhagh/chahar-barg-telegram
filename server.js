@@ -271,7 +271,7 @@ async function notifyAdminOnce(state) {
   lines.push(`*P2* (${safeMd(p2Name)}): ${f.p2.total}  |  10♦=${f.p2.tenDiamonds}  2♣=${f.p2.twoClubs}  A=${f.p2.aces}  J=${f.p2.jacks}  Sur=${f.p2.surPoints}  Clubs=${f.p2.clubs}`);
 
   try {
-    await bot.sendMessage(ADMIN_CHAT_ID, lines.join("\n"), { parse_mode: "MarkdownV2" });
+    bot.sendMessage(ADMIN_CHAT_ID, text); // no parse_mode at all
   } catch (e) {
     console.error("Failed to notify admin:", e?.message || e);
   }
