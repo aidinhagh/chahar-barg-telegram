@@ -1,59 +1,428 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chahar Barg (2P)</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chahar Barg — 2 Player</title>
+  
+  <!-- Fonts: Roboto for UI, Crimson Pro for Cards -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+        :root {
+            /* Palette */
+            --table-primary: #1e6b41;
+            --table-dark: #0d331e;
+            --felt-texture: rgba(255, 255, 255, 0.03);
+            
+            --card-bg: #fdfdfd;
+            --card-border: #d1d1d1;
+            
+            --gold: #ffcf40;
+            --gold-shadow: rgba(255, 207, 64, 0.4);
+            
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+
+            /* Dimensions */
+            --card-width: 58px;
+            --card-height: 84px;
+            --card-radius: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: radial-gradient(circle at center, var(--table-primary) 0%, var(--table-dark) 100%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Subtle Noise Texture for Felt Look */
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Constrain width for better mobile view */
+            height: 100vh;
+            margin: 0 auto;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+            z-index: 1;
+        }
+
+        /* --- Top Bar (Stats) --- */
+        .top-bar {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .score-board {
+            font-size: 14px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .player-info strong {
+            color: var(--gold);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .score-val {
+            font-weight: 700;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .sur-count {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            margin-left: 4px;
+        }
+
+        #status-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.3);
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* --- Hands --- */
+        .hand-area {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            height: 120px;
+            gap: -10px; /* Slight overlap for hands looks nicer */
+        }
+        
+        #player-hand .card:hover {
+            transform: translateY(-8px) scale(1.05);
+            z-index: 10;
+        }
+
+        #computer-hand .card {
+            transform: scale(0.9); /* Opponent cards slightly smaller for perspective */
+        }
+
+        /* --- Floor / Table --- */
+        .floor-area {
+            flex: 1;
+            /* Felt outline effect */
+            background: rgba(0, 0, 0, 0.15);
+            border: 2px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            margin: 5px 12px;
+            padding: 15px;
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            gap: 10px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        /* --- Deck pile --- */
+        .deck-pile {
+            position: absolute;
+            right: 15px;
+            bottom: 15px;
+            width: var(--card-width);
+            height: var(--card-height);
+            border-radius: var(--card-radius);
+            background: linear-gradient(135deg, #1b2b66, #0d1536);
+            /* Stacked paper effect using box-shadow */
+            box-shadow: 
+                1px 1px 0 #bbb,
+                2px 2px 0 #1b2b66,
+                3px 3px 0 #bbb,
+                4px 4px 0 #1b2b66,
+                5px 5px 6px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 2;
+        }
+
+        .deck-pile span {
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* --- Card visuals --- */
+        .card {
+            width: var(--card-width);
+            height: var(--card-height);
+            background: var(--card-bg);
+            border-radius: var(--card-radius);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Crimson Pro', serif;
+            font-weight: 800;
+            color: #222;
+            user-select: none;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.27);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            /* Prevent blurry text on transform */
+            backface-visibility: hidden; 
+        }
+
+        .card.red { color: #d92b2b; }
+
+        .card-back {
+            /* Complex geometric pattern for card back */
+            background-color: #1a2a6c;
+            background-image: 
+                radial-gradient(#b21f1f 15%, transparent 16%),
+                radial-gradient(#fdbb2d 15%, transparent 16%);
+            background-size: 12px 12px;
+            background-position: 0 0, 6px 6px;
+            border: 2px solid #fff;
+        }
+
+        .card-center {
+            font-size: 26px;
+        }
+
+        .card-corner {
+            position: absolute;
+            font-size: 12px;
+            line-height: 1;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 600;
+        }
+
+        .card-corner.tl { top: 4px; left: 5px; text-align: left; }
+        .card-corner.br { bottom: 4px; right: 5px; text-align: right; transform: rotate(180deg); }
+
+        /* --- Buttons --- */
+        .btn {
+            background: linear-gradient(180deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+        }
+        .btn:hover { 
+            background: rgba(255, 215, 0, 0.2); 
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        /* --- Modal --- */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.visible { 
+            display: flex; 
+            opacity: 1;
+        }
+
+        .modal-content {
+            width: min(400px, 90vw);
+            background: #141b26;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        
+        .modal-content h2 {
+            color: #fff;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        /* --- Sur indicator --- */
+        .sur-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid var(--gold);
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 24px;
+            color: var(--gold);
+            display: none;
+            z-index: 50;
+            box-shadow: 0 0 30px var(--gold-shadow);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.27) forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+
+        /* --- Responsive tweaks --- */
+        @media (max-width: 520px) {
+            :root {
+                --card-width: 48px;
+                --card-height: 70px;
+            }
+
+            .top-bar { padding: 8px 12px; }
+            .score-val { font-size: 14px; }
+            .player-info strong { font-size: 11px; }
+
+            .hand-area { height: 95px; }
+
+            .card-center { font-size: 22px; }
+            .card-corner { font-size: 11px; }
+
+            .floor-area { 
+                margin: 5px;
+                padding: 10px;
+                /* Adjust padding to not hide cards behind deck */
+                padding-right: 60px; 
+            }
+            
+            .deck-pile {
+                right: 8px;
+                bottom: 8px;
+            }
+        }
+  </style>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Chahar Barg — 2 Player</h1>
-      <div class="row">
-        <button id="create">Create Room (browser testing)</button>
-        <input id="room" placeholder="ROOM ID" maxlength="32" />
-        <button id="join">Join</button>
-      </div>
-      <div class="muted" id="info"></div>
-      <div class="muted" id="err"></div>
-    </header>
 
-    <main class="board">
-      <section class="panel">
-        <h2>Floor</h2>
-        <div id="floor" class="cards"></div>
-        <div class="muted" id="turn"></div>
-        <div class="muted" id="deck"></div>
-      </section>
+    <div class="game-container">
+        <!-- Top Stats Bar -->
+        <div class="top-bar">
+            <!-- Player Stats -->
+            <div class="player-info">
+                <strong>You</strong>
+                <div>
+                    <span class="score-val" id="p-score-display">0</span> 
+                    <span class="sur-count">(<span id="p-sur-display">0</span> Sur)</span>
+                </div>
+            </div>
 
-      <section class="panel">
-        <h2>Your Hand</h2>
-        <div id="hand" class="cards"></div>
-        <div class="stats">
-          <div>Captured: <span id="myCap">0</span></div>
-          <div>Sur: <span id="mySur">0</span></div>
+            <!-- Status -->
+            <div id="status-text">Waiting...</div>
+
+            <!-- Opponent Stats -->
+            <div class="player-info" style="align-items: flex-end;">
+                <strong>Opponent</strong>
+                <div>
+                    <span class="score-val" id="c-score-display">0</span> 
+                    <span class="sur-count">(<span id="c-sur-display">0</span> Sur)</span>
+                </div>
+            </div>
         </div>
-      </section>
 
-      <section class="panel">
-        <h2>Opponent</h2>
-        <div class="stats">
-          <div>Hand: <span id="oppHand">0</span></div>
-          <div>Captured: <span id="oppCap">0</span></div>
-          <div>Sur: <span id="oppSur">0</span></div>
+        <div class="sur-indicator" id="sur-indicator">SUR!</div>
+
+        <!-- Opponent Hand -->
+        <div class="hand-area" id="computer-hand">
+            <!-- Cards populated by client.js -->
         </div>
-      </section>
 
-      <section class="panel" id="finalPanel" style="display:none;">
-        <h2>Final</h2>
-        <pre id="final"></pre>
-      </section>
-    </main>
-  </div>
+        <!-- Floor/Table -->
+        <div class="floor-area" id="floor-area">
+            <div class="deck-pile">
+                <span id="deck-count">0</span>
+            </div>
+            <!-- Cards populated by client.js -->
+        </div>
 
+        <!-- Player Hand -->
+        <div class="hand-area" id="player-hand">
+            <!-- Cards populated by client.js -->
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div class="modal" id="result-modal">
+        <div class="modal-content">
+            <h2>Game Result</h2>
+            <div id="winner-text" style="font-size: 22px; color: var(--gold); font-weight: 800; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);"></div>
+            <div id="score-details" style="text-align: left; margin: 15px 0; font-size: 14px; line-height: 1.6; color: #ccc; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"></div>
+            <button class="btn" id="play-again-btn" style="width: 100%; margin-top: 10px;">Play Again</button>
+        </div>
+    </div>
+
+  <!-- Multiplayer client (renders UI + sends moves) -->
   <script src="client.js"></script>
 </body>
 </html>
