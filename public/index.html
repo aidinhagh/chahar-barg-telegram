@@ -1,289 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chahar Barg — 2 Player</title>
-  <style>
-        :root {
-            --felt-green: #0a4a2d;
-            --card-bg: #f5f5f5;
-            --card-border: #111;
-            --gold: #ffd700;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-
-        .game-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            /* Add padding to lift cards off the very bottom edge */
-            padding-bottom: max(15px, env(safe-area-inset-bottom));
-        }
-
-        /* --- Top Bar (Stats) --- */
-        .top-bar {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 10px 20px;
-            background: rgba(0, 0, 0, 0.4);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .score-board {
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        .score-board strong {
-            color: #ccc;
-        }
-
-        #status-text {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 2px;
-            font-style: italic;
-        }
-
-        /* --- Hands --- */
-        .hand-area {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 12px;
-            height: 110px;
-            gap: 6px;
-        }
-
-        /* --- Floor / Table --- */
-        .floor-area {
-            flex: 1;
-            background: var(--felt-green);
-            border-radius: 14px;
-            margin: 10px 10px;
-            padding: 20px;
-            position: relative;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-content: center;
-            gap: 8px;
-            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.06), 0 15px 40px rgba(0,0,0,0.5);
-            /* leave room for deck pile on the right */
-            padding-right: 75px;
-        }
-
-        /* --- Deck pile --- */
-        .deck-pile {
-            position: absolute;
-            right: 15px;
-            bottom: 15px;
-            width: 55px;
-            height: 76px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.25);
-            background: repeating-linear-gradient(
-                45deg,
-                rgba(255,255,255,0.12),
-                rgba(255,255,255,0.12) 6px,
-                rgba(255,255,255,0.06) 6px,
-                rgba(255,255,255,0.06) 12px
-            );
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 6px;
-            font-size: 12px;
-            color: rgba(255,255,255,0.85);
-            user-select: none;
-        }
-
-        /* --- Card visuals --- */
-        .card {
-            width: var(--card-width, 52px);
-            height: var(--card-height, 72px);
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            color: black;
-            user-select: none;
-            transform: translateZ(0);
-        }
-
-        .card.red { color: #d40000; }
-
-        .card-back {
-            background: linear-gradient(135deg, #1b2b66, #0d1536);
-            border: 1px solid rgba(255,255,255,0.25);
-            color: rgba(255,255,255,0.85);
-        }
-
-        .card-center {
-            font-size: 22px;
-        }
-
-        .card-corner {
-            position: absolute;
-            font-size: 12px;
-            line-height: 1.1;
-        }
-
-        .card-corner.tl { top: 5px; left: 6px; text-align: left; }
-        .card-corner.br { bottom: 5px; right: 6px; text-align: right; transform: rotate(180deg); }
-
-        /* --- Buttons --- */
-        .btn {
-            background: rgba(255, 215, 0, 0.15);
-            color: var(--gold);
-            border: 1px solid var(--gold);
-            padding: 10px 16px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .btn:hover { background: rgba(255, 215, 0, 0.22); }
-
-        /* --- Modal --- */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.75);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 999;
-        }
-
-        .modal.visible { display: flex; }
-
-        .modal-content {
-            width: min(520px, 92vw);
-            background: #0f1520;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 14px;
-            padding: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-        }
-
-        /* --- Sur indicator --- */
-        .sur-indicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 215, 0, 0.2);
-            border: 1px solid var(--gold);
-            padding: 10px 16px;
-            border-radius: 14px;
-            font-weight: bold;
-            color: var(--gold);
-            display: none;
-            z-index: 5;
-        }
-
-        /* --- Responsive tweaks --- */
-        @media (max-width: 520px) {
-            :root {
-                --card-width: 44px;
-                --card-height: 62px;
-            }
-
-            .top-bar { padding: 5px 10px; }
-            .score-board { font-size: 12px; }
-
-            .hand-area { height: 90px; }
-
-            .card-center { font-size: 20px; }
-            .card-corner { font-size: 11px; }
-
-            .deck-pile { 
-                width: 40px; 
-                height: 56px; 
-                right: 5px;
-                bottom: 5px;
-            }
-            .floor-area { padding-right: 55px; }
-        }
-  </style>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chahar Barg (2P)</title>
+  <link rel="stylesheet" href="style.css" />
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+  <div class="wrap">
+    <header>
+      <h1>Chahar Barg — 2 Player</h1>
+      <div class="row">
+        <button id="create">Create Room (browser testing)</button>
+        <input id="room" placeholder="ROOM ID" maxlength="32" />
+        <button id="join">Join</button>
+      </div>
+      <div class="muted" id="info"></div>
+      <div class="muted" id="err"></div>
+    </header>
 
-    <div class="game-container">
-        <!-- Top Stats Bar -->
-        <div class="top-bar">
-            <div class="score-board">
-                <div><strong>Player:</strong> <span id="p-score-display">0</span> <span style="opacity:0.8;">(<span id="p-sur-display">0</span> Sur)</span></div>
-                <div><strong>Opponent:</strong> <span id="c-score-display">0</span> <span style="opacity:0.8;">(<span id="c-sur-display">0</span> Sur)</span></div>
-                <div id="status-text">Waiting for opponent…</div>
-            </div>
+    <main class="board">
+      <section class="panel">
+        <h2>Floor</h2>
+        <div id="floor" class="cards"></div>
+        <div class="muted" id="turn"></div>
+        <div class="muted" id="deck"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Your Hand</h2>
+        <div id="hand" class="cards"></div>
+        <div class="stats">
+          <div>Captured: <span id="myCap">0</span></div>
+          <div>Sur: <span id="mySur">0</span></div>
         </div>
+      </section>
 
-        <div class="sur-indicator" id="sur-indicator">SUR!</div>
-
-        <!-- Opponent Hand -->
-        <div class="hand-area" id="computer-hand">
-            <!-- Cards populated by client.js -->
+      <section class="panel">
+        <h2>Opponent</h2>
+        <div class="stats">
+          <div>Hand: <span id="oppHand">0</span></div>
+          <div>Captured: <span id="oppCap">0</span></div>
+          <div>Sur: <span id="oppSur">0</span></div>
         </div>
+      </section>
 
-        <!-- Floor/Table -->
-        <div class="floor-area" id="floor-area">
-            <div class="deck-pile">
-                Deck: <span id="deck-count">0</span>
-            </div>
-            <!-- Cards populated by client.js -->
-        </div>
+      <section class="panel" id="finalPanel" style="display:none;">
+        <h2>Final</h2>
+        <pre id="final"></pre>
+      </section>
+    </main>
+  </div>
 
-        <!-- Player Hand -->
-        <div class="hand-area" id="player-hand">
-            <!-- Cards populated by client.js -->
-        </div>
-    </div>
-
-    <!-- Result Modal -->
-    <div class="modal" id="result-modal">
-        <div class="modal-content">
-            <h2 style="margin-top:0;">Game Result</h2>
-            <div id="winner-text" style="font-size: 18px; color: var(--gold); font-weight: bold;"></div>
-            <div id="score-details" style="text-align: left; margin-top: 15px;"></div>
-            <button class="btn" id="play-again-btn">Play Again</button>
-        </div>
-    </div>
-
-  <!-- Multiplayer client (renders UI + sends moves) -->
   <script src="client.js"></script>
 </body>
 </html>
+
 
