@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chahar Barg</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">♠</div>
+        <div>
+          <h1>Chahar Barg</h1>
+          <div class="sub">2‑Player • Fast rounds • Clean captures</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="row">
+          <button id="create" class="btn ghost">Create (browser test)</button>
+          <input id="name" placeholder="Your name" maxlength="20" />
+          <input id="room" placeholder="ROOM ID" maxlength="32" />
+          <button id="join" class="btn">Join</button>
+        </div>
+        <div class="meta">
+          <div class="pill" id="statusPill">Not connected</div>
+          <div class="muted" id="info"></div>
+          <div class="error" id="err"></div>
+        </div>
+      </div>
+    </header>
+
+    <main class="table">
+      <section class="panel floorPanel">
+        <div class="panelHeader">
+          <h2>Floor</h2>
+          <div class="rightMeta">
+            <div class="turn" id="turn"></div>
+            <div class="deck" id="deck"></div>
+          </div>
+        </div>
+        <div id="floor" class="cards floor"></div>
+      </section>
+
+      <section class="panel handPanel">
+        <div class="panelHeader">
+          <h2>Your hand</h2>
+          <div class="scoreline">
+            <div class="kv"><span class="k">Captured</span><span class="v" id="myCap">0</span></div>
+            <div class="kv"><span class="k">Sur</span><span class="v" id="mySur">0</span></div>
+          </div>
+        </div>
+        <div id="hand" class="cards hand"></div>
+        <div class="hint" id="hint">Tip: tap a card on your turn.</div>
+      </section>
+
+      <section class="panel oppPanel">
+        <div class="panelHeader">
+          <h2>Opponent</h2>
+          <div class="scoreline">
+            <div class="kv"><span class="k">Hand</span><span class="v" id="oppHand">0</span></div>
+            <div class="kv"><span class="k">Captured</span><span class="v" id="oppCap">0</span></div>
+            <div class="kv"><span class="k">Sur</span><span class="v" id="oppSur">0</span></div>
+          </div>
+        </div>
+        <div class="names">
+          <div class="nameRow"><span class="dot me"></span><span id="meName">You</span></div>
+          <div class="nameRow"><span class="dot opp"></span><span id="oppName">Waiting…</span></div>
+        </div>
+      </section>
+
+      <section class="panel finalPanel" id="finalPanel" style="display:none;">
+        <div class="panelHeader">
+          <h2>Match result</h2>
+          <button class="btn ghost small" id="copyResult">Copy</button>
+        </div>
+        <pre id="final"></pre>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="muted">Made for Telegram Mini Apps • Cards & animations are pure CSS</div>
+    </footer>
+  </div>
+
+  <script src="client.js"></script>
+</body>
+</html>
